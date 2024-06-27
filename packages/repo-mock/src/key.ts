@@ -11,7 +11,7 @@ export class KeyPair {
     this.publicKey = toPublicKeyMeta(publicKey);
   }
 
-  public sign(data: Buffer): tuf.Signature {
+  public sign(data: Uint8Array): tuf.Signature {
     const sig = signSHA256(this.privateKey, data);
     return new tuf.Signature({ keyID: this.publicKey.keyID, sig });
   }

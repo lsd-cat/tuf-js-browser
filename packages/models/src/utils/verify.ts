@@ -7,7 +7,7 @@ export const verifySignature = (
   key: crypto.VerifyKeyObjectInput,
   signature: string
 ): boolean => {
-  const canonicalData = Buffer.from(canonicalize(metaDataSignedData));
+  const canonicalData = new TextEncoder().encode(canonicalize(metaDataSignedData));
 
   return crypto.verify(
     undefined,

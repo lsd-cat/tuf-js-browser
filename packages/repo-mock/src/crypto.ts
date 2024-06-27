@@ -12,6 +12,6 @@ export function digestSHA256(data: crypto.BinaryLike): string {
 }
 
 // Returns a hex-encoded SHA256 signature
-export function signSHA256(key: crypto.KeyObject, data: Buffer): string {
+export function signSHA256(key: crypto.KeyObject, data: Uint8Array): string {
   return crypto.createSign('sha256').update(data).sign(key).toString('hex');
 }

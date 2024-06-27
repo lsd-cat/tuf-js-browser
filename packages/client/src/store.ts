@@ -25,7 +25,7 @@ export class TrustedMetadataStore {
   private trustedSet: TrustedSet = {};
   private referenceTime: Date;
 
-  constructor(rootData: Buffer) {
+  constructor(rootData: Uint8Array) {
     // Client workflow 5.1: record fixed update start time
     this.referenceTime = new Date();
 
@@ -56,8 +56,9 @@ export class TrustedMetadataStore {
     return this.trustedSet[name];
   }
 
-  public updateRoot(bytesBuffer: Buffer): Metadata<Root> {
-    const data = JSON.parse(bytesBuffer.toString('utf8'));
+  public updateRoot(bytesBuffer: Uint8Array): Metadata<Root> {
+    const data_string = new TextDecoder().decode(bytesBuffer)
+    const data = JSON.parse(data_string);
     const newRoot = Metadata.fromJSON(MetadataKind.Root, data);
     if (newRoot.signed.type != MetadataKind.Root) {
       throw new RepositoryError(`Expected 'root', got ${newRoot.signed.type}`);
@@ -83,7 +84,7 @@ export class TrustedMetadataStore {
     return newRoot;
   }
 
-  public updateTimestamp(bytesBuffer: Buffer): Metadata<Timestamp> {
+  public updateTimestamp(bytesBuffer: Uint8Array): Metadata<Timestamp> {
     if (this.snapshot) {
       throw new RuntimeError('Cannot update timestamp after snapshot');
     }
@@ -92,7 +93,8 @@ export class TrustedMetadataStore {
       throw new ExpiredMetadataError('Final root.json is expired');
     }
 
-    const data = JSON.parse(bytesBuffer.toString('utf8'));
+    const data_string = new TextDecoder().decode(bytesBuffer)
+    const data = JSON.parse(data_string);
     const newTimestamp = Metadata.fromJSON(MetadataKind.Timestamp, data);
 
     if (newTimestamp.signed.type != MetadataKind.Timestamp) {
@@ -142,7 +144,7 @@ export class TrustedMetadataStore {
   }
 
   public updateSnapshot(
-    bytesBuffer: Buffer,
+    bytesBuffer: Uint8Array,
     trusted = false
   ): Metadata<Snapshot> {
     if (!this.timestamp) {
@@ -164,7 +166,8 @@ export class TrustedMetadataStore {
       snapshotMeta.verify(bytesBuffer);
     }
 
-    const data = JSON.parse(bytesBuffer.toString('utf8'));
+    const data_string = new TextDecoder().decode(bytesBuffer)
+    const data = JSON.parse(data_string);
     const newSnapshot = Metadata.fromJSON(MetadataKind.Snapshot, data);
 
     if (newSnapshot.signed.type != MetadataKind.Snapshot) {
@@ -208,7 +211,7 @@ export class TrustedMetadataStore {
   }
 
   public updateDelegatedTargets(
-    bytesBuffer: Buffer,
+    bytesBuffer: Uint8Array,
     roleName: string,
     delegatorName: string
   ) {
@@ -235,7 +238,9 @@ export class TrustedMetadataStore {
     // Client workflow 5.6.2: check against snapshot role's targets hash
     meta.verify(bytesBuffer);
 
-    const data = JSON.parse(bytesBuffer.toString('utf8'));
+
+    const data_string = new TextDecoder().decode(bytesBuffer)
+    const data = JSON.parse(data_string);
     const newDelegate = Metadata.fromJSON(MetadataKind.Targets, data);
 
     if (newDelegate.signed.type != MetadataKind.Targets) {
@@ -265,8 +270,9 @@ export class TrustedMetadataStore {
 
   // Verifies and loads data as trusted root metadata.
   // Note that an expired initial root is still considered valid.
-  private loadTrustedRoot(bytesBuffer: Buffer) {
-    const data = JSON.parse(bytesBuffer.toString('utf8'));
+  private loadTrustedRoot(bytesBuffer: Uint8Array) {
+    const data_string = new TextDecoder().decode(bytesBuffer)
+    const data = JSON.parse(data_string);
     const root = Metadata.fromJSON(MetadataKind.Root, data);
 
     if (root.signed.type != MetadataKind.Root) {

@@ -52,8 +52,8 @@ export class Metadata<T extends MetadataType> implements Signable {
     this.unrecognizedFields = unrecognizedFields || {};
   }
 
-  public sign(signer: (data: Buffer) => Signature, append = true): void {
-    const bytes = Buffer.from(canonicalize(this.signed.toJSON()));
+  public sign(signer: (data: Uint8Array) => Signature, append = true): void {
+    const bytes = new TextEncoder().encode(canonicalize(this.signed.toJSON()))
     const signature = signer(bytes);
 
     if (!append) {

@@ -169,7 +169,7 @@ export class Updater {
     return; // File not found
   }
 
-  private loadLocalMetadata(fileName: string): Buffer {
+  private loadLocalMetadata(fileName: string): Uint8Array {
     const filePath = path.join(this.dir, `${fileName}.json`);
     log('READ %s', filePath);
     return fs.readFileSync(filePath);

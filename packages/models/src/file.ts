@@ -48,7 +48,7 @@ export class MetaFile {
     );
   }
 
-  public verify(data: Buffer): void {
+  public verify(data: Uint8Array): void {
     // Verifies that the given data matches the expected length.
     if (this.length !== undefined) {
       if (data.length !== this.length) {
