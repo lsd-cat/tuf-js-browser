@@ -1,4 +1,3 @@
-import { Readable } from 'stream';
 import { LengthOrHashMismatchError, ValueError } from '../error';
 import { MetaFile, TargetFile } from '../file';
 import { stringToUint8Array } from '../utils/encoding';
@@ -104,25 +103,25 @@ describe('MetaFile', () => {
 
     describe('when the data length does not match the expected length', () => {
       const data = stringToUint8Array('a');
-
-      it('throws an error', () => {
-        expect(() => subject.verify(data)).toThrow(LengthOrHashMismatchError);
+    
+      it('throws an error', async () => {
+        await expect(subject.verify(data)).rejects.toThrow(LengthOrHashMismatchError);
       });
-    });
+    });    
 
     describe('when the data does not match the expected hash', () => {
       const data = stringToUint8Array('abcde');
-
-      it('throws an error', () => {
-        expect(() => subject.verify(data)).toThrow(LengthOrHashMismatchError);
+    
+      it('throws an error', async () => {
+        await expect(subject.verify(data)).rejects.toThrow(LengthOrHashMismatchError);
       });
-    });
+    });    
 
     describe('when the data matches the expected length and hash', () => {
       const data = stringToUint8Array('hello');
-
-      it('does not throw an error', () => {
-        expect(() => subject.verify(data)).not.toThrow();
+    
+      it('does not throw an error', async () => {
+        await expect(subject.verify(data)).resolves.not.toThrow();
       });
     });
   });
@@ -340,33 +339,42 @@ describe('TargetFile', () => {
           '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
       },
     };
-    const data = Readable.from(stringToUint8Array('hello'));
 
     const subject = new TargetFile(opts);
 
     describe('when the data length is shorter than the expected length', () => {
-      const data = Readable.from(stringToUint8Array('aa'));
-
+      const data = new ReadableStream({
+        start(controller) {
+          controller.enqueue(stringToUint8Array('aa'));
+          controller.close();
+        }
+      });
+    
       it('throws an error', async () => {
-        await expect(subject.verify(data)).rejects.toThrow(
-          LengthOrHashMismatchError
-        );
+        await expect(subject.verify(data)).rejects.toThrow(LengthOrHashMismatchError);
       });
     });
 
     describe('when the data length is longer than the expected length', () => {
-      const data = Readable.from(
-        stringToUint8Array('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-      );
-
+      const data = new ReadableStream({
+        start(controller) {
+          controller.enqueue(stringToUint8Array('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'));
+          controller.close();
+        }
+      });
+    
       it('throws an error', async () => {
-        await expect(subject.verify(data)).rejects.toThrow(
-          LengthOrHashMismatchError
-        );
+        await expect(subject.verify(data)).rejects.toThrow(LengthOrHashMismatchError);
       });
     });
 
     describe('when the hash algorithm is not supported', () => {
+      const data = new ReadableStream({
+        start(controller) {
+          controller.enqueue(stringToUint8Array('hello'));
+          controller.close();
+        }
+      });
       const subject = new TargetFile({ ...opts, hashes: { foo: 'a' } });
 
       it('throws an error', async () => {
@@ -377,16 +385,25 @@ describe('TargetFile', () => {
     });
 
     describe('when the data does not match the expected hash', () => {
-      const data = Readable.from(stringToUint8Array('abcde'));
-
+      const data = new ReadableStream({
+        start(controller) {
+          controller.enqueue(stringToUint8Array('abcde'));
+          controller.close();
+        }
+      });
+    
       it('throws an error', async () => {
-        await expect(subject.verify(data)).rejects.toThrow(
-          LengthOrHashMismatchError
-        );
+        await expect(subject.verify(data)).rejects.toThrow(LengthOrHashMismatchError);
       });
     });
 
     describe('when the data matches the expected length and hash', () => {
+      const data = new ReadableStream({
+        start(controller) {
+          controller.enqueue(stringToUint8Array('hello'));
+          controller.close();
+        }
+      });
       it('does not throw an error', async () => {
         await expect(subject.verify(data)).resolves.toEqual(undefined);
       });

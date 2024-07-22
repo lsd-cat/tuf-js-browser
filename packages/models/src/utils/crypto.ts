@@ -1,4 +1,4 @@
-import { stringToUint8Array } from './encoding';
+import { stringToUint8Array, uint8ArrayConcat } from './encoding';
 
 class Hash {
   private algorithm: "SHA-256" | "SHA-384" | "SHA-512";
@@ -20,10 +20,7 @@ class Hash {
           data = stringToUint8Array(data);
       }
 
-      var tmp = new Uint8Array(this.value.byteLength + data.byteLength);
-      tmp.set(new Uint8Array(this.value), 0);
-      tmp.set(new Uint8Array(data), this.value.byteLength);
-      this.value = tmp;
+      this.value = uint8ArrayConcat([new Uint8Array(this.value), data]);
   }
 
   async digest(): Promise<Uint8Array> {

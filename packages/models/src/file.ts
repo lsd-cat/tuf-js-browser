@@ -1,8 +1,9 @@
-import crypto from 'crypto';
-import { Readable } from 'stream';
+import crypto, { Hash } from './utils/crypto';
+import { uint8ArrayToHex } from './utils/encoding';
 import util from 'util';
 import { LengthOrHashMismatchError, ValueError } from './error';
 import { guard, JSONObject, JSONValue } from './utils';
+
 
 interface MetaFileOptions {
   version: number;
@@ -48,7 +49,7 @@ export class MetaFile {
     );
   }
 
-  public verify(data: Uint8Array): void {
+  public async verify(data: Uint8Array): Promise<void> {
     // Verifies that the given data matches the expected length.
     if (this.length !== undefined) {
       if (data.length !== this.length) {
@@ -60,9 +61,11 @@ export class MetaFile {
 
     // Verifies that the given data matches the supplied hashes.
     if (this.hashes) {
-      Object.entries(this.hashes).forEach(([key, value]) => {
-        let hash: crypto.Hash;
-
+      const hashEntries = Object.entries(this.hashes);
+    
+      await Promise.all(hashEntries.map(async ([key, value]) => {
+        let hash: Hash;
+    
         try {
           hash = crypto.createHash(key);
         } catch (e) {
@@ -70,14 +73,15 @@ export class MetaFile {
             `Hash algorithm ${key} not supported`
           );
         }
-        const observedHash = hash.update(data).digest('hex');
-
+        hash.update(data);
+        const observedHash = uint8ArrayToHex(await hash.digest());
+    
         if (observedHash !== value) {
           throw new LengthOrHashMismatchError(
             `Expected hash ${value} but got ${observedHash}`
           );
         }
-      });
+      }));
     }
   }
 
@@ -168,9 +172,9 @@ export class TargetFile {
     );
   }
 
-  public async verify(stream: Readable): Promise<void> {
+  public async verify(stream: ReadableStream<Uint8Array>): Promise<void> {
     let observedLength = 0;
-
+  
     // Create a digest for each hash algorithm
     const digests = Object.keys(this.hashes).reduce(
       (acc, key) => {
@@ -183,38 +187,46 @@ export class TargetFile {
         }
         return acc;
       },
-      {} as Record<string, crypto.Hash>
+      {} as Record<string, Hash>
     );
-
-    // Read stream chunk by chunk
-    for await (const chunk of stream) {
-      // Keep running tally of stream length
-      observedLength += chunk.length;
-
-      // Append chunk to each digest
-      Object.values(digests).forEach((digest) => {
-        digest.update(chunk);
-      });
+  
+    // Create a reader to read from the stream
+    const reader = stream.getReader();
+  
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        // Keep running tally of stream length
+        observedLength += value.length;
+  
+        // Append chunk to each digest
+        Object.values(digests).forEach((digest) => {
+          digest.update(value);
+        });
+      }
     }
-
+  
     // Verify length matches expected value
     if (observedLength !== this.length) {
       throw new LengthOrHashMismatchError(
         `Expected length ${this.length} but got ${observedLength}`
       );
     }
-
+  
     // Verify each digest matches expected value
-    Object.entries(digests).forEach(([key, value]) => {
+    const digestEntries = Object.entries(digests);
+  
+    await Promise.all(digestEntries.map(async ([key, value]) => {
       const expected = this.hashes[key];
-      const actual = value.digest('hex');
-
+      const actual = uint8ArrayToHex(await value.digest());
+  
       if (actual !== expected) {
         throw new LengthOrHashMismatchError(
           `Expected hash ${expected} but got ${actual}`
         );
       }
-    });
+    }));
   }
 
   public toJSON(): JSONObject {
