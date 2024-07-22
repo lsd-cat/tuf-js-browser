@@ -1,6 +1,7 @@
 import { Readable } from 'stream';
 import { LengthOrHashMismatchError, ValueError } from '../error';
 import { MetaFile, TargetFile } from '../file';
+import { stringToUint8Array } from '../utils/encoding';
 
 describe('MetaFile', () => {
   describe('constructor', () => {
@@ -102,7 +103,7 @@ describe('MetaFile', () => {
     const subject = new MetaFile(opts);
 
     describe('when the data length does not match the expected length', () => {
-      const data = Buffer.from('a');
+      const data = stringToUint8Array('a');
 
       it('throws an error', () => {
         expect(() => subject.verify(data)).toThrow(LengthOrHashMismatchError);
@@ -110,7 +111,7 @@ describe('MetaFile', () => {
     });
 
     describe('when the data does not match the expected hash', () => {
-      const data = Buffer.from('abcde');
+      const data = stringToUint8Array('abcde');
 
       it('throws an error', () => {
         expect(() => subject.verify(data)).toThrow(LengthOrHashMismatchError);
@@ -118,7 +119,7 @@ describe('MetaFile', () => {
     });
 
     describe('when the data matches the expected length and hash', () => {
-      const data = Buffer.from('hello');
+      const data = stringToUint8Array('hello');
 
       it('does not throw an error', () => {
         expect(() => subject.verify(data)).not.toThrow();
@@ -339,12 +340,12 @@ describe('TargetFile', () => {
           '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
       },
     };
-    const data = Readable.from(Buffer.from('hello'));
+    const data = Readable.from(stringToUint8Array('hello'));
 
     const subject = new TargetFile(opts);
 
     describe('when the data length is shorter than the expected length', () => {
-      const data = Readable.from(Buffer.from('aa'));
+      const data = Readable.from(stringToUint8Array('aa'));
 
       it('throws an error', async () => {
         await expect(subject.verify(data)).rejects.toThrow(
@@ -355,7 +356,7 @@ describe('TargetFile', () => {
 
     describe('when the data length is longer than the expected length', () => {
       const data = Readable.from(
-        Buffer.from('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        stringToUint8Array('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
       );
 
       it('throws an error', async () => {
@@ -376,7 +377,7 @@ describe('TargetFile', () => {
     });
 
     describe('when the data does not match the expected hash', () => {
-      const data = Readable.from(Buffer.from('abcde'));
+      const data = Readable.from(stringToUint8Array('abcde'));
 
       it('throws an error', async () => {
         await expect(subject.verify(data)).rejects.toThrow(

@@ -1,6 +1,7 @@
 import { canonicalize } from '@tufjs/canonical-json';
 import crypto from 'crypto';
 import { JSONObject } from '../utils/types';
+import { hexToUint8Array } from './encoding';
 
 export const verifySignature = (
   metaDataSignedData: JSONObject,
@@ -13,6 +14,6 @@ export const verifySignature = (
     undefined,
     canonicalData,
     key,
-    Buffer.from(signature, 'hex')
+    hexToUint8Array(signature)
   );
 };

@@ -1,4 +1,5 @@
 import { encodeOIDString } from '../../utils/oid';
+import { hexToUint8Array } from '../../utils/encoding';
 
 describe('encodeOIDString', () => {
   const testCases = [
@@ -12,7 +13,7 @@ describe('encodeOIDString', () => {
   it('encodes OIDs propertly', () => {
     testCases.forEach(({ oid, expected }) => {
       const r = encodeOIDString(oid);
-      expect(r).toEqual(Buffer.from(expected, 'hex'));
+      expect(r).toEqual(hexToUint8Array(expected));
     });
   });
 });

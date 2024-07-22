@@ -1,6 +1,7 @@
 import crypto, { KeyObject, VerifyKeyObjectInput } from 'crypto';
 import { CryptoError, UnsupportedAlgorithmError } from '../error';
 import { encodeOIDString } from './oid';
+import { hexToUint8Array, uint8ArrayConcat } from './encoding';
 
 const ASN1_TAG_SEQUENCE = 0x30;
 const ANS1_TAG_BIT_STRING = 0x03;
@@ -68,7 +69,7 @@ function getED25519PublicKey(keyInfo: KeyInfo): VerifyKeyObjectInput {
     }
 
     key = crypto.createPublicKey({
-      key: ed25519.hexToDER(keyInfo.keyVal),
+      key: Buffer.from(ed25519.hexToDER(keyInfo.keyVal)),
       format: 'der',
       type: 'spki',
     });
@@ -89,7 +90,7 @@ function getECDCSAPublicKey(keyInfo: KeyInfo): VerifyKeyObjectInput {
     }
 
     key = crypto.createPublicKey({
-      key: ecdsa.hexToDER(keyInfo.keyVal),
+      key: Buffer.from(ecdsa.hexToDER(keyInfo.keyVal)),
       format: 'der',
       type: 'spki',
     });
@@ -101,29 +102,29 @@ function getECDCSAPublicKey(keyInfo: KeyInfo): VerifyKeyObjectInput {
 const ed25519 = {
   // Translates a hex key into a crypto KeyObject
   // https://keygen.sh/blog/how-to-use-hexadecimal-ed25519-keys-in-node/
-  hexToDER: (hex: string): Buffer => {
-    const key = Buffer.from(hex, 'hex');
+  hexToDER: (hex: string): Uint8Array => {
+    const key = hexToUint8Array(hex);
     const oid = encodeOIDString(OID_EDDSA);
 
     // Create a byte sequence containing the OID and key
-    const elements = Buffer.concat([
-      Buffer.concat([
-        Buffer.from([ASN1_TAG_SEQUENCE]),
-        Buffer.from([oid.length]),
+    const elements = uint8ArrayConcat([
+      uint8ArrayConcat([
+        new Uint8Array([ASN1_TAG_SEQUENCE]),
+        new Uint8Array([oid.length]),
         oid,
       ]),
-      Buffer.concat([
-        Buffer.from([ANS1_TAG_BIT_STRING]),
-        Buffer.from([key.length + 1]),
-        Buffer.from([NULL_BYTE]),
+      uint8ArrayConcat([
+        new Uint8Array([ANS1_TAG_BIT_STRING]),
+        new Uint8Array([key.length + 1]),
+        new Uint8Array([NULL_BYTE]),
         key,
       ]),
     ]);
 
     // Wrap up by creating a sequence of elements
-    const der = Buffer.concat([
-      Buffer.from([ASN1_TAG_SEQUENCE]),
-      Buffer.from([elements.length]),
+    const der = uint8ArrayConcat([
+      new Uint8Array([ASN1_TAG_SEQUENCE]),
+      new Uint8Array([elements.length]),
       elements,
     ]);
 
@@ -132,30 +133,30 @@ const ed25519 = {
 };
 
 const ecdsa = {
-  hexToDER: (hex: string): Buffer => {
-    const key = Buffer.from(hex, 'hex');
-    const bitString = Buffer.concat([
-      Buffer.from([ANS1_TAG_BIT_STRING]),
-      Buffer.from([key.length + 1]),
-      Buffer.from([NULL_BYTE]),
+  hexToDER: (hex: string): Uint8Array => {
+    const key = hexToUint8Array(hex);
+    const bitString = uint8ArrayConcat([
+      new Uint8Array([ANS1_TAG_BIT_STRING]),
+      new Uint8Array([key.length + 1]),
+      new Uint8Array([NULL_BYTE]),
       key,
     ]);
 
-    const oids = Buffer.concat([
+    const oids = uint8ArrayConcat([
       encodeOIDString(OID_EC_PUBLIC_KEY),
       encodeOIDString(OID_EC_CURVE_P256V1),
     ]);
 
-    const oidSequence = Buffer.concat([
-      Buffer.from([ASN1_TAG_SEQUENCE]),
-      Buffer.from([oids.length]),
+    const oidSequence = uint8ArrayConcat([
+      new Uint8Array([ASN1_TAG_SEQUENCE]),
+      new Uint8Array([oids.length]),
       oids,
     ]);
 
     // Wrap up by creating a sequence of elements
-    const der = Buffer.concat([
-      Buffer.from([ASN1_TAG_SEQUENCE]),
-      Buffer.from([oidSequence.length + bitString.length]),
+    const der = uint8ArrayConcat([
+      new Uint8Array([ASN1_TAG_SEQUENCE]),
+      new Uint8Array([oidSequence.length + bitString.length]),
       oidSequence,
       bitString,
     ]);

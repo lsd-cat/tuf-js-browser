@@ -1,6 +1,6 @@
 const ANS1_TAG_OID = 0x06;
 
-export function encodeOIDString(oid: string): Buffer {
+export function encodeOIDString(oid: string): Uint8Array {
   const parts = oid.split('.');
 
   // The first two subidentifiers are encoded into the first byte
@@ -12,8 +12,8 @@ export function encodeOIDString(oid: string): Buffer {
     rest.push(...bytes);
   });
 
-  const der = Buffer.from([first, ...rest]);
-  return Buffer.from([ANS1_TAG_OID, der.length, ...der]);
+  const der = new Uint8Array([first, ...rest]);
+  return new Uint8Array([ANS1_TAG_OID, der.length, ...der]);
 }
 
 function encodeVariableLengthInteger(value: number): number[] {
