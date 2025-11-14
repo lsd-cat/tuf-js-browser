@@ -1,1 +1,1 @@
-Superseeded by https://github.com/freedomofpress/tuf-browser
+Superseded by https://github.com/freedomofpress/tuf-browser
